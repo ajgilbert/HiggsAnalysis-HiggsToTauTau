@@ -161,7 +161,7 @@ void CombineHarvester::AddBinByBin(double threshold, bool fixed_norm,
       continue;
     }
     for (int j = 1; j <= h->GetNbinsX(); ++j) {
-      bool do_bbb = false;
+      bool do_bbb = true;
       double val = h->GetBinContent(j);
       double err = h->GetBinError(j);
       if (val == 0. && err > 0.) do_bbb = true;

@@ -158,108 +158,99 @@ int main() {
 
   cout << ">> Merging bin errors...\n";
   ch::CombineHarvester cb_et = move(cb.cp().channel({"et"}));
-  for (string era : {"7TeV", "8TeV"}) {
-    cb_et.cp().era({era}).bin_id({1, 2}).process({"ZL", "ZJ", "QCD", "W"})
-        .MergeBinErrors(0.1, 0.5);
-    cb_et.cp().era({era}).bin_id({3, 5}).process({"W"})
-        .MergeBinErrors(0.1, 0.5);
-  }
-  cb_et.cp().era({"7TeV"}).bin_id({6}).process({"ZL", "ZJ", "W", "ZTT"})
-      .MergeBinErrors(0.1, 0.5);
-  cb_et.cp().era({"8TeV"}).bin_id({7}).process({"ZL", "ZJ", "W", "ZTT"})
-      .MergeBinErrors(0.1, 0.5);
-  cb_et.cp().era({"8TeV"}).bin_id({6}).process({"ZL", "ZJ", "W"})
-      .MergeBinErrors(0.1, 0.5);
+  // for (string era : {"7TeV", "8TeV"}) {
+  //   cb_et.cp().era({era}).bin_id({1, 2}).process({"ZL", "ZJ", "QCD", "W"})
+  //       .MergeBinErrors(0.1, 0.5);
+  //   cb_et.cp().era({era}).bin_id({3, 5}).process({"W"})
+  //       .MergeBinErrors(0.1, 0.5);
+  // }
+  // cb_et.cp().era({"7TeV"}).bin_id({6}).process({"ZL", "ZJ", "W", "ZTT"})
+  //     .MergeBinErrors(0.1, 0.5);
+  // cb_et.cp().era({"8TeV"}).bin_id({7}).process({"ZL", "ZJ", "W", "ZTT"})
+  //     .MergeBinErrors(0.1, 0.5);
+  // cb_et.cp().era({"8TeV"}).bin_id({6}).process({"ZL", "ZJ", "W"})
+  //     .MergeBinErrors(0.1, 0.5);
 
   ch::CombineHarvester cb_mt = move(cb.cp().channel({"mt"}));
-  for (string era : {"7TeV", "8TeV"}) {
-    cb_mt.cp().era({era}).bin_id({1, 2, 3, 4}).process({"W", "QCD"})
-        .MergeBinErrors(0.1, 0.5);
-  }
-  cb_mt.cp().era({"7TeV"}).bin_id({5}).process({"W"})
-      .MergeBinErrors(0.1, 0.5);
-  cb_mt.cp().era({"7TeV"}).bin_id({6}).process({"W", "ZTT"})
-      .MergeBinErrors(0.1, 0.5);
-  cb_mt.cp().era({"8TeV"}).bin_id({5, 6}).process({"W"})
-      .MergeBinErrors(0.1, 0.5);
-  cb_mt.cp().era({"8TeV"}).bin_id({7}).process({"W", "ZTT"})
-      .MergeBinErrors(0.1, 0.5);
+  // for (string era : {"7TeV", "8TeV"}) {
+  //   cb_mt.cp().era({era}).bin_id({1, 2, 3, 4}).process({"W", "QCD"})
+  //       .MergeBinErrors(0.1, 0.5);
+  // }
+  // cb_mt.cp().era({"7TeV"}).bin_id({5}).process({"W"})
+  //     .MergeBinErrors(0.1, 0.5);
+  // cb_mt.cp().era({"7TeV"}).bin_id({6}).process({"W", "ZTT"})
+  //     .MergeBinErrors(0.1, 0.5);
+  // cb_mt.cp().era({"8TeV"}).bin_id({5, 6}).process({"W"})
+  //     .MergeBinErrors(0.1, 0.5);
+  // cb_mt.cp().era({"8TeV"}).bin_id({7}).process({"W", "ZTT"})
+  //     .MergeBinErrors(0.1, 0.5);
 
   ch::CombineHarvester cb_em = move(cb.cp().channel({"em"}));
-  for (string era : {"7TeV", "8TeV"}) {
-    cb_em.cp().era({era}).bin_id({1, 3}).process({"Fakes"})
-        .MergeBinErrors(0.1, 0.5);
-  }
-  cb_em.cp().era({"7TeV"}).bin_id({4}).process({"Fakes", "EWK", "Ztt"})
-      .MergeBinErrors(0.1, 0.5);
-  cb_em.cp().era({"8TeV"}).bin_id({5}).process({"Fakes", "EWK", "Ztt"})
-      .MergeBinErrors(0.1, 0.5);
-  cb_em.cp().era({"8TeV"}).bin_id({4}).process({"Fakes", "EWK"})
-      .MergeBinErrors(0.1, 0.5);
+  // for (string era : {"7TeV", "8TeV"}) {
+  //   cb_em.cp().era({era}).bin_id({1, 3}).process({"Fakes"})
+  //       .MergeBinErrors(0.1, 0.5);
+  // }
+  // cb_em.cp().era({"7TeV"}).bin_id({4}).process({"Fakes", "EWK", "Ztt"})
+  //     .MergeBinErrors(0.1, 0.5);
+  // cb_em.cp().era({"8TeV"}).bin_id({5}).process({"Fakes", "EWK", "Ztt"})
+  //     .MergeBinErrors(0.1, 0.5);
+  // cb_em.cp().era({"8TeV"}).bin_id({4}).process({"Fakes", "EWK"})
+  //     .MergeBinErrors(0.1, 0.5);
 
   ch::CombineHarvester cb_ee_mm = move(cb.cp().channel({"ee", "mm"}));
-  for (string era : {"7TeV", "8TeV"}) {
-    cb_ee_mm.cp().era({era}).bin_id({1, 3, 4})
-        .process({"ZTT", "ZEE", "ZMM", "TTJ"})
-        .MergeBinErrors(0.0, 0.5);
-  }
+  // for (string era : {"7TeV", "8TeV"}) {
+  //   cb_ee_mm.cp().era({era}).bin_id({1, 3, 4})
+  //       .process({"ZTT", "ZEE", "ZMM", "TTJ"})
+  //       .MergeBinErrors(0.0, 0.5);
+  // }
 
   ch::CombineHarvester cb_tt = move(cb.cp().channel({"tt"}));
-  cb_tt.cp().bin_id({0, 1, 2}).era({"8TeV"}).process({"ZTT", "QCD"})
-      .MergeBinErrors(0.1, 0.5);
+  // cb_tt.cp().bin_id({0, 1, 2}).era({"8TeV"}).process({"ZTT", "QCD"})
+  //     .MergeBinErrors(0.1, 0.5);
 
   cout << ">> Generating bbb uncertainties...\n";
-  cb_mt.cp().bin_id({0, 1, 2, 3, 4}).process({"W", "QCD"})
-      .AddBinByBin(0.1, true, &cb);
-  cb_mt.cp().era({"7TeV"}).bin_id({5}).process({"W"})
-      .AddBinByBin(0.1, true, &cb);
-  cb_mt.cp().era({"7TeV"}).bin_id({6}).process({"W", "ZTT"})
-      .AddBinByBin(0.1, true, &cb);
-  cb_mt.cp().era({"8TeV"}).bin_id({5, 6}).process({"W"})
-      .AddBinByBin(0.1, true, &cb);
-  cb_mt.cp().era({"8TeV"}).bin_id({7}).process({"W", "ZTT"})
-      .AddBinByBin(0.1, true, &cb);
+  cb_mt.cp().AddBinByBin(0.0, true, &cb);
 
-  cb_et.cp().bin_id({1, 2}).process({"ZL", "ZJ", "QCD", "W"})
-      .AddBinByBin(0.1, true, &cb);
-  cb_et.cp().bin_id({3, 5}).process({"W"})
-      .AddBinByBin(0.1, true, &cb);
-  cb_et.cp().era({"7TeV"}).bin_id({6}).process({"ZL", "ZJ", "W", "ZTT"})
-      .AddBinByBin(0.1, true, &cb);
-  cb_et.cp().era({"8TeV"}).bin_id({7}).process({"ZL", "ZJ", "W", "ZTT"})
-      .AddBinByBin(0.1, true, &cb);
-  cb_et.cp().era({"8TeV"}).bin_id({6}).process({"ZL", "ZJ", "W"})
-      .AddBinByBin(0.1, true, &cb);
+  // cb_et.cp().bin_id({1, 2}).process({"ZL", "ZJ", "QCD", "W"})
+  //     .AddBinByBin(0.1, true, &cb);
+  // cb_et.cp().bin_id({3, 5}).process({"W"})
+  //     .AddBinByBin(0.1, true, &cb);
+  // cb_et.cp().era({"7TeV"}).bin_id({6}).process({"ZL", "ZJ", "W", "ZTT"})
+  //     .AddBinByBin(0.1, true, &cb);
+  // cb_et.cp().era({"8TeV"}).bin_id({7}).process({"ZL", "ZJ", "W", "ZTT"})
+  //     .AddBinByBin(0.1, true, &cb);
+  // cb_et.cp().era({"8TeV"}).bin_id({6}).process({"ZL", "ZJ", "W"})
+  //     .AddBinByBin(0.1, true, &cb);
 
-  cb_em.cp().bin_id({1, 3}).process({"Fakes"})
-      .AddBinByBin(0.1, true, &cb);
-  cb_em.cp().era({"7TeV"}).bin_id({4}).process({"Fakes", "EWK", "Ztt"})
-      .AddBinByBin(0.1, true, &cb);
-  cb_em.cp().era({"8TeV"}).bin_id({5}).process({"Fakes", "EWK", "Ztt"})
-      .AddBinByBin(0.1, true, &cb);
-  cb_em.cp().era({"8TeV"}).bin_id({4}).process({"Fakes", "EWK"})
-      .AddBinByBin(0.1, true, &cb);
+  // cb_em.cp().bin_id({1, 3}).process({"Fakes"})
+  //     .AddBinByBin(0.1, true, &cb);
+  // cb_em.cp().era({"7TeV"}).bin_id({4}).process({"Fakes", "EWK", "Ztt"})
+  //     .AddBinByBin(0.1, true, &cb);
+  // cb_em.cp().era({"8TeV"}).bin_id({5}).process({"Fakes", "EWK", "Ztt"})
+  //     .AddBinByBin(0.1, true, &cb);
+  // cb_em.cp().era({"8TeV"}).bin_id({4}).process({"Fakes", "EWK"})
+  //     .AddBinByBin(0.1, true, &cb);
 
-  cb_ee_mm.cp().bin_id({1, 3, 4}).process({"ZTT", "ZEE", "ZMM", "TTJ"})
-      .AddBinByBin(0.0, true, &cb);
+  // cb_ee_mm.cp().bin_id({1, 3, 4}).process({"ZTT", "ZEE", "ZMM", "TTJ"})
+  //     .AddBinByBin(0.0, true, &cb);
 
-  cb_tt.cp().bin_id({0, 1, 2}).era({"8TeV"}).process({"QCD", "ZTT"})
-      .AddBinByBin(0.1, true, &cb);
+  // cb_tt.cp().bin_id({0, 1, 2}).era({"8TeV"}).process({"QCD", "ZTT"})
+  //     .AddBinByBin(0.1, true, &cb);
 
   cout << ">> Setting standardised bin names...\n";
   ch::SetStandardBinNames(cb);
-  VString droplist = ch::ParseFileLines(
-    aux_pruning + "uncertainty-pruning-drop-131128-sm.txt");
-  cout << ">> Droplist contains " << droplist.size() << " entries\n";
+  // VString droplist = ch::ParseFileLines(
+  //   aux_pruning + "uncertainty-pruning-drop-131128-sm.txt");
+  // cout << ">> Droplist contains " << droplist.size() << " entries\n";
 
-  set<string> to_drop;
-  for (auto x : droplist) to_drop.insert(x);
+  // set<string> to_drop;
+  // for (auto x : droplist) to_drop.insert(x);
 
-  auto pre_drop = cb.syst_name_set();
-  cb.syst_name(droplist, false);
-  auto post_drop = cb.syst_name_set();
-  cout << ">> Systematics dropped: " << pre_drop.size() - post_drop.size()
-            << "\n";
+  // auto pre_drop = cb.syst_name_set();
+  // cb.syst_name(droplist, false);
+  // auto post_drop = cb.syst_name_set();
+  // cout << ">> Systematics dropped: " << pre_drop.size() - post_drop.size()
+  //           << "\n";
 
   // set<string> dropped;
   // set_difference(pre_drop.begin(), pre_drop.end(), post_drop.begin(),

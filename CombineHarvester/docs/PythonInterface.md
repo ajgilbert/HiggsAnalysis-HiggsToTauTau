@@ -1,13 +1,16 @@
 Python Interface {#python-interface}
 ====================================
 
-The python interface is embedded within the shared library (`CombineTools/lib/libCHCombineTools.so`) that is produced when the code is compiled. Add this directory to your `PYTHONPATH` environment variable so that it can be imported from anywhere. This can also be achieved by doing:
+[TOC]
+
+The python interface is embedded within the shared library (`CombineTools/python/combineharvester/_combineharvester.so`) that is produced when the code is compiled. Add the directory `CombineTools/python` to your `PYTHONPATH` environment variable so that it can be imported from anywhere. This can also be achieved by doing:
 
     eval `make env`
 
 Then in a python script you can do, e.g. `import combineharvester as ch`. The sections below summarises the methods that are currently supported.
 
-## Constructors and copying
+Constructors and copying {#py-constr-copy}
+==========================================
 C++:
 
     ch::CombineHarvester cb;
@@ -20,7 +23,8 @@ Python:
     cb_shallow_copy = cb.cp()
     cb_deep_copy = cb.deep()
 
-## Logging and Printing
+Logging and Printing {#py-log-print}
+====================================
 C++:
 
     cb.PrintAll();
@@ -29,6 +33,7 @@ C++:
     cb.PrintSysts();
     cb.PrintParams();
     cb.SetVerbosity(1);
+    cb.Verbosity();
 
 Python:
 
@@ -38,10 +43,13 @@ Python:
     cb.PrintSysts()
     cb.PrintParams()
     cb.SetVerbosity(1)
+    cb.Verbosity()
 
-## Datacards
+Datacards {#py-datacards}
+=========================
 
-### Parsing specifying metadata
+Parsing specifying metadata  {#py-datacards-meta}
+-------------------------------------------------
 C++:
 
     cb.ParseDatacard("datacard.txt", "htt", "8TeV", "mt", 6, "125");
@@ -54,7 +62,8 @@ Metadata parameters also have default values and can be named explicitly:
 
     cb.ParseDatacard("datacard.txt", analysis = "htt", mass = "125")
 
-### Parsing with pattern substitution
+Parsing with pattern substitution {#py-datacards-pat-sub}
+---------------------------------------------------------
 C++:
 
     cb.ParseDatacard("htt_mt_8_8TeV.txt", "$ANALYSIS_$CHANNEL_$BINID_$ERA.txt");
@@ -63,7 +72,8 @@ Python (note the different method name):
 
     cb.QuickParseDatacard("htt_mt_8_8TeV.txt", "$ANALYSIS_$CHANNEL_$BINID_$ERA.txt")
 
-### Writing
+Writing {#py-datacards-writing}
+-------------------------------
 C++:
 
     cb.WriteDatacard("card.txt", "file.root"); // or
@@ -75,7 +85,8 @@ Python (second method not yet available):
 
     cb.WriteDatacard("card.txt", "file.root")
 
-## Filtering
+Filtering {#py-filtering}
+=========================
 All of the basic filter methods can be called and chained in a similar way in both interfaces. For example:
 
 C++:
@@ -98,9 +109,10 @@ Python:
 
     cb.FilterAll(lambda obj : obj.mass() in ['110', '145'])
 
-## Set producers
+Set producers {#py-sets}
+========================
 
-Only the basic set producer methods are available at the moment. The generic methods (GenerateSetFromObs, GenerateSetFromProcs, GenerateSetFromSysts) will be adapted shortly.
+All basic set producer methods are available.
 
 C++:
 
@@ -115,7 +127,22 @@ Python:
     for p in cb.process_set():
         ...
 
-## Modifications
+The generic methods are available too, and accept a generic function object.
+
+C++:
+
+    set<string> bins = cb.SetFromAll(std::mem_fn(&ch::Object::bin));
+    set<string> some_set = cb.SetFromProcs([](ch::Process const* p) {
+            return p->process() + "_" + p->bin();
+        });
+
+Python:
+
+    bins = cb.SetFromAll(ch.Object.bin)
+    some_set = cb.SetFromProcs(lambda x : x.process() + '_' + x.bin())
+
+Modifications {#py-modifications}
+=================================
 
 The `GetParameter`, and `UpdateParameters` methods that use `ch::Parameter` objects are not available (and may be deprecated soon anyway). The `UpdateParameters` method taking a `RooFitResult` is available however.
 
@@ -147,7 +174,8 @@ Python:
         if p.process() == 'ggH_hww125': p.set_signal(True)
     cb.ForEachProc(SwitchToSignal)
 
-## Rate and shape evaluation
+Rate and shape evaluation {#py-eval}
+====================================
 
 All methods are supported with a similar interface.
 
@@ -172,7 +200,8 @@ Python:
     f = cb.GetShape()
     g = cb.GetShapeWithUncertainty(res, 500)
 
-## Datacard creation
+Datacard creation {#py-creation}
+================================
 
 Creating observation and process entries is supported.
 
@@ -187,7 +216,7 @@ Python:
     ## or with default values:
     cb.AddProcesses(procs = ['ZTT', 'ZL', ZJ'], bin = [(0, "0jet"), (1, "1jet")], signal=False)
 
-As is bin-by-bin creating and merging.
+As is bin-by-bin creating and merging, but note that these methods have been deprecated in favour of the standalone ch::BinByBinFactory class (see below).
 
 C++:
 
@@ -199,5 +228,63 @@ Python:
     cb.MergeBinErrors(0.1, 0.5)
     cb.AddBinByBin(0.1, True, cb)
 
-The AddSyst ExtractPdfs, ExtractData and AddWorkspace methods are not currently supported. The creation of Systematic entries via the [AddSyst](\ref ch::CombineHarvester::AddSyst) method is not trivial to convert to python due to the heavy use of C++ templates. A python equivalent will be made available in a future release.
+The creation of Systematic entries with the `AddSyst` method is supported, though has a slightly different syntax due to the heavy template usage in the C++ version.
 
+C++:
+
+    cb.cp().process({"WH", "ZH"}).AddSyst(
+      cb, "QCDscale_VH", "lnN", SystMap<channel, era, bin_id>::init
+        ({"mt"}, {"7TeV", "8TeV"},  {1, 2},               1.010)
+        ({"mt"}, {"7TeV", "8TeV"},  {3, 4, 5, 6, 7},      1.040)
+        ({"et"}, {"7TeV"},          {1, 2, 3, 5, 6, 7},   1.040)
+        ({"et"}, {"8TeV"},          {1, 2},               1.010)
+        ({"et"}, {"8TeV"},          {3, 5, 6, 7},         1.040));
+
+Python:
+
+    cb.cp().process(['WH', 'ZH']).AddSyst(
+      cb, "QCDscale_VH", "lnN", ch.SystMap('channel', 'era', 'bin_id')
+        (['mt'], ['7TeV', '8TeV'],  [1, 2],               1.010)
+        (['mt'], ['7TeV', '8TeV'],  [3, 4, 5, 6, 7],      1.040)
+        (['et'], ['7TeV'],          [1, 2, 3, 5, 6, 7],   1.040)
+        (['et'], ['8TeV'],          [1, 2],               1.010)
+        (['et'], ['8TeV'],          [3, 5, 6, 7],         1.040))
+
+
+The ExtractPdfs, ExtractData and AddWorkspace methods are not currently supported.
+
+Class: CardWriter {#py-card-writer}
+================================
+The ch::CardWriter class has an identical interface in python.
+
+C++:
+
+    ch::CardWriter writer("$TAG/$MASS/$ANALYSIS_$CHANNEL_$BINID_$ERA.txt",
+                          "$TAG/common/$ANALYSIS_$CHANNEL.input_$ERA.root");
+    writer.WriteCards("LIMITS/cmb", cb);
+
+Python:
+
+    writer = ch.CardWriter('$TAG/$MASS/$ANALYSIS_$CHANNEL_$BINID_$ERA.txt',
+                           '$TAG/common/$ANALYSIS_$CHANNEL.input_$ERA.root')
+    writer.WriteCards('LIMITS/cmb', cb)
+
+Class: BinByBinFactory {#py-bbbfactory}
+=======================================
+The ch::BinByBinFactory class has an identical interface in python.
+
+C++:
+
+    auto bbb = ch::BinByBinFactory()
+        .SetAddThreshold(0.1)
+        .SetMergeThreshold(0.5)
+        .SetFixNorm(true);
+    bbb.MergeBinErrors(cb.cp().backgrounds());
+    bbb.AddBinByBin(cb.cp().backgrounds(), cb);
+
+Python:
+
+    bbb = ch.BinByBinFactory()
+    bbb.SetAddThreshold(0.1).SetMergeThreshold(0.5).SetFixNorm(True)
+    bbb.MergeBinErrors(cb.cp().backgrounds())
+    bbb.AddBinByBin(cb.cp().backgrounds(), cb)

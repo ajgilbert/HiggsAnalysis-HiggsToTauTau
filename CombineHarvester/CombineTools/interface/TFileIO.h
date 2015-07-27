@@ -29,6 +29,9 @@ T OpenFromTFile(TFile* file, std::string const& path);
 // ------------------------------------------------------------------
 template <class T>
 void ch::WriteToTFile(T const* ptr, TFile* file, std::string const& path) {
+  #ifdef TIME_FUNCTIONS
+    LAUNCH_FUNCTION_TIMER(__timer__, __token__)
+  #endif
   file->cd();
   std::vector<std::string> as_vec;
   boost::split(as_vec, path, boost::is_any_of("/"));
@@ -39,7 +42,7 @@ void ch::WriteToTFile(T const* ptr, TFile* file, std::string const& path) {
       }
       gDirectory->cd(as_vec[i].c_str());
     }
-    if (!gDirectory->Get(as_vec.back().c_str())) {
+    if (!gDirectory->FindKey(as_vec.back().c_str())) {
       gDirectory->WriteTObject(ptr, as_vec.back().c_str());
     }
     gDirectory->cd("/");

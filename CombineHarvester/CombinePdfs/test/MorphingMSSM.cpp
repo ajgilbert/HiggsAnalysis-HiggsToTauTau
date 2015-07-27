@@ -251,26 +251,21 @@ int main() {
   cout << " done\n";
 
   cout << "Scaling signal process rates for acceptance...\n";
-  map<string, TGraph> xs;
   for (string e : {"8TeV"}) {
     for (string p : {"ggH", "bbH"}) {
-      ch::ParseTable(&xs, "input/xsecs_brs/mssm_" + p + "_" + e + "_accept.txt",
-                     {p + "_" + e});
-    }
-  }
-  for (string const& e : {"8TeV"}) {
-    for (string const& p : {"ggH", "bbH"}) {
       cout << "Scaling for process " << p << " and era " << e << "\n";
+      auto gr = ch::TGraphFromTable(
+          "input/xsecs_brs/mssm_" + p + "_" + e + "_accept.txt", "mPhi",
+          "accept");
       cb.cp().process(signal_types[p]).era({e}).ForEachProc([&](ch::Process *proc) {
-        ch::ScaleProcessRate(proc, &xs, p+"_"+e, "");
+        double m = boost::lexical_cast<double>(proc->mass());
+        proc->set_rate(proc->rate() * gr.Eval(m));
       });
     }
   }
 
   cout << "Setting standardised bin names...";
-  cb.ForEachObs(ch::SetStandardBinName<ch::Observation>);
-  cb.ForEachProc(ch::SetStandardBinName<ch::Process>);
-  cb.ForEachSyst(ch::SetStandardBinName<ch::Systematic>);
+  ch::SetStandardBinNames(cb);
   cout << " done\n";
 
   RooWorkspace ws("htt", "htt");
@@ -300,8 +295,8 @@ int main() {
     }
   }
   demo.Close();
-  cb.AddWorkspace(&ws);
-  cb.cp().signals().ExtractPdfs("htt", "$BIN_$PROCESS_morph", &cb);
+  cb.AddWorkspace(ws);
+  cb.cp().signals().ExtractPdfs(cb, "htt", "$BIN_$PROCESS_morph");
   cb.PrintAll();
 
   // cout << "Adding bbb...\n";

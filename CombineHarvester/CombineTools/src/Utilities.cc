@@ -9,9 +9,37 @@
 #include "RooFitResult.h"
 #include "RooRealVar.h"
 #include "RooDataHist.h"
+#include "RooAbsReal.h"
+#include "RooAbsData.h"
 #include "CombineTools/interface/CombineHarvester.h"
 
 namespace ch {
+
+RooArgSet ParametersByName(RooAbsReal const* pdf, RooArgSet const* dat_vars) {
+  // Get all pdf parameters first
+  // We are expected to manage the memory of the RooArgSet pointer we're given,
+  // so let's use a unique_ptr to ensure it gets cleaned up
+  std::unique_ptr<RooArgSet> all_vars(pdf->getParameters(RooArgSet()));
+  // Get the data variables and fill a set with all the names
+  std::set<std::string> names;
+  RooFIter dat_it = dat_vars->fwdIterator();
+  RooAbsArg *dat_arg = nullptr;
+  while((dat_arg = dat_it.next())) {
+    names.insert(dat_arg->GetName());
+  }
+
+  // Build a new RooArgSet from all_vars, excluding any in names
+  RooArgSet result_set;
+  RooFIter vars_it = all_vars->fwdIterator();
+  RooAbsArg *vars_arg = nullptr;
+  while((vars_arg = vars_it.next())) {
+    if (!names.count(vars_arg->GetName())) {
+      result_set.add(*vars_arg);
+    }
+  }
+  return result_set;
+}
+
 // ---------------------------------------------------------------------------
 // Paramter extraction/manipulation
 // ---------------------------------------------------------------------------
@@ -47,53 +75,76 @@ std::vector<ch::Parameter> ExtractSampledFitParameters(
 // ---------------------------------------------------------------------------
 // Property matching & editing
 // ---------------------------------------------------------------------------
-void SetStandardBinNames(CombineHarvester & cb) {
-  cb.ForEachObs(ch::SetStandardBinName<ch::Observation>);
-  cb.ForEachProc(ch::SetStandardBinName<ch::Process>);
-  cb.ForEachSyst(ch::SetStandardBinName<ch::Systematic>);
+void SetStandardBinNames(CombineHarvester& cb, std::string const& pattern) {
+  cb.ForEachObj([&](ch::Object* obj) {
+    ch::SetStandardBinName(obj, pattern);
+  });
 }
+
+void SetStandardBinName(ch::Object* obj, std::string pattern) {
+  boost::replace_all(pattern, "$BINID",
+                     boost::lexical_cast<std::string>(obj->bin_id()));
+  boost::replace_all(pattern, "$BIN", obj->bin());
+  boost::replace_all(pattern, "$PROCESS", obj->process());
+  boost::replace_all(pattern, "$MASS", obj->mass());
+  boost::replace_all(pattern, "$ERA", obj->era());
+  boost::replace_all(pattern, "$CHANNEL", obj->channel());
+  boost::replace_all(pattern, "$ANALYSIS", obj->analysis());
+  obj->set_bin(pattern);
+}
+
+void SetFromBinName(ch::Object *input, std::string parse_rules) {
+  boost::replace_all(parse_rules, "$ANALYSIS",  "(?<ANALYSIS>\\w+)");
+  boost::replace_all(parse_rules, "$ERA",       "(?<ERA>\\w+)");
+  boost::replace_all(parse_rules, "$CHANNEL",   "(?<CHANNEL>\\w+)");
+  boost::replace_all(parse_rules, "$BINID",     "(?<BINID>\\w+)");
+  boost::replace_all(parse_rules, "$MASS",      "(?<MASS>\\w+)");
+  boost::regex rgx(parse_rules);
+  boost::smatch matches;
+  boost::regex_search(input->bin(), matches, rgx);
+  if (matches.str("ANALYSIS").length())
+    input->set_analysis(matches.str("ANALYSIS"));
+  if (matches.str("ERA").length())
+    input->set_era(matches.str("ERA"));
+  if (matches.str("CHANNEL").length())
+    input->set_channel(matches.str("CHANNEL"));
+  if (matches.str("BINID").length())
+    input->set_bin_id(boost::lexical_cast<int>(matches.str("BINID")));
+  if (matches.str("MASS").length())
+    input->set_mass(matches.str("MASS"));
+}
+
 
 // ---------------------------------------------------------------------------
 // Rate scaling
 // ---------------------------------------------------------------------------
-void ParseTable(std::map<std::string, TGraph>* graphs, std::string const& file,
-                std::vector<std::string> const& fields) {
-  auto lines = ch::ParseFileLines(file);
-  for (auto const& f : fields) {
-    (*graphs)[f] = TGraph(lines.size());
-  }
-  for (unsigned i = 0; i < lines.size(); ++i) {
+TGraph TGraphFromTable(std::string filename, std::string const& x_column, std::string const& y_column) {
+  auto lines = ch::ParseFileLines(filename);
+  if (lines.size() == 0) throw std::runtime_error(FNERROR("Table is empty"));
+  std::vector<std::string> fields;
+  boost::split(fields, lines[0], boost::is_any_of("\t "),
+               boost::token_compress_on);
+  auto x_it = std::find(fields.begin(), fields.end(), x_column);
+  if (x_it == fields.end())
+    throw std::runtime_error(FNERROR("No column with label " + x_column));
+  auto y_it = std::find(fields.begin(), fields.end(), y_column);
+  if (y_it == fields.end())
+    throw std::runtime_error(FNERROR("No column with label " + y_column));
+  unsigned x_col(x_it - fields.begin());
+  unsigned y_col(y_it - fields.begin());
+  TGraph res(lines.size() - 1);
+  for (unsigned i = 1; i < lines.size(); ++i) {
     std::vector<std::string> words;
     boost::split(words, lines[i], boost::is_any_of("\t "),
                  boost::token_compress_on);
-    double m = boost::lexical_cast<double>(words.at(0));
-    for (unsigned f = 0; f < fields.size(); ++f) {
-      (*graphs)[fields[f]]
-          .SetPoint(i, m, boost::lexical_cast<double>(words.at(f + 1)));
+    if (words.size() != fields.size()) {
+      FNLOG(std::cout) << "Skipped this line:\n" << lines[i] << "\n";
+      continue;
     }
+    res.SetPoint(i, boost::lexical_cast<double>(words.at(x_col)),
+                    boost::lexical_cast<double>(words.at(y_col)));
   }
-}
-
-void ScaleProcessRate(ch::Process* p,
-                      std::map<std::string, TGraph> const* graphs,
-                      std::string const& prod, std::string const& decay,
-                      std::string const& force_mass) {
-  double mass =
-      boost::lexical_cast<double>(force_mass.size() ? force_mass : p->mass());
-  double scale = 1.0;
-  if (prod != "") {
-    if (!graphs->count(prod))
-      throw std::runtime_error(
-          FNERROR("Requested TGraph " + prod + " not found in map"));
-    scale *= graphs->find(prod)->second.Eval(mass);
-  }
-  if (decay != "") {
-    if (!graphs->count(decay))
-      throw std::runtime_error(
-          FNERROR("Requested TGraph " + decay + " not found in map"));
-    scale *= graphs->find(decay)->second.Eval(mass);
-  }
-  p->set_rate(p->rate() * scale);
+  return res;
 }
 
 // ---------------------------------------------------------------------------
@@ -206,6 +257,38 @@ std::vector<std::string> MassesFromRange(std::string const& input,
             "[MassesFromRange] High mass is smaller than low mass!");
       double start = lo;
       while (start < hi + 0.001) {
+        mass_set.insert(start);
+        start += step;
+      }
+    }
+  }
+  std::vector<std::string> result;
+  for (auto const& m : mass_set) {
+    result.push_back((boost::format(fmt) % m).str());
+  }
+  return result;
+}
+
+std::vector<std::string> ValsFromRange(std::string const& input,
+                                       std::string const& fmt) {
+  std::set<double> mass_set;
+  std::vector<std::string> tokens;
+  boost::split(tokens, input, boost::is_any_of(","));
+  for (auto const& t : tokens) {
+    std::vector<std::string> sub_tokens;
+    boost::split(sub_tokens, t, boost::is_any_of(":|"));
+    if (sub_tokens.size() == 1) {
+      double mass_val = boost::lexical_cast<double>(sub_tokens[0]);
+      mass_set.insert(mass_val);
+    } else if (sub_tokens.size() == 3) {
+      double lo = boost::lexical_cast<double>(sub_tokens[0]);
+      double hi = boost::lexical_cast<double>(sub_tokens[1]);
+      double step = boost::lexical_cast<double>(sub_tokens[2]);
+      if (hi <= lo)
+        throw std::runtime_error(
+            "[ValsFromRange] High mass is smaller than low mass!");
+      double start = lo;
+      while (start < hi + 1E-4) {
         mass_set.insert(start);
         start += step;
       }

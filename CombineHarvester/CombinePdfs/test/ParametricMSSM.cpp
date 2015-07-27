@@ -82,18 +82,15 @@ int main() {
   std::cout << " done\n";
 
   std::cout << "Scaling signal process rates for acceptance...\n";
-  map<string, TGraph> xs;
-  for (std::string const& e : {"7TeV", "8TeV"}) {
-    for (std::string const& p : {"ggH", "bbH"}) {
-      ch::ParseTable(&xs, "data/xsecs_brs/mssm_" + p + "_" + e + "_accept.txt",
-                     {p + "_" + e});
-    }
-  }
-  for (std::string const& e : {"7TeV", "8TeV"}) {
-    for (std::string const& p : {"ggH", "bbH"}) {
+  for (string e : {"8TeV"}) {
+    for (string p : {"ggH", "bbH"}) {
       std::cout << "Scaling for process " << p << " and era " << e << "\n";
+      auto gr = ch::TGraphFromTable(
+          "input/xsecs_brs/mssm_" + p + "_" + e + "_accept.txt", "mPhi",
+          "accept");
       cb.cp().process({p}).era({e}).ForEachProc([&](ch::Process *proc) {
-        ch::ScaleProcessRate(proc, &xs, p+"_"+e, "");
+        double m = boost::lexical_cast<double>(proc->mass());
+        proc->set_rate(proc->rate() * gr.Eval(m));
       });
     }
   }
@@ -101,14 +98,11 @@ int main() {
   cb.era({"8TeV"});
 
   std::cout << "Setting standardised bin names...";
-  cb.ForEachObs(ch::SetStandardBinName<ch::Observation>);
-  cb.ForEachProc(ch::SetStandardBinName<ch::Process>);
-  cb.ForEachSyst(ch::SetStandardBinName<ch::Systematic>);
+  ch::SetStandardBinNames(cb);
   std::cout << " done\n";
 
   // cb.era({"8TeV"}).bin_id({8});
-  set<string> lm_bins =
-      cb.GenerateSetFromObs<string>(mem_fn(&ch::Observation::bin));
+  set<string> lm_bins = cb.SetFromObs(mem_fn(&ch::Observation::bin));
 
   if (create_asimov) {
     for (auto const& b : lm_bins) {
@@ -140,11 +134,7 @@ int main() {
     in->set_bin(in->bin() + "_hm");
   });
 
-  set<string> hm_bins =
-      cb_hm.GenerateSetFromObs<string>(mem_fn(&ch::Observation::bin));
-
-
-
+  set<string> hm_bins = cb_hm.SetFromObs(mem_fn(&ch::Observation::bin));
 
   cb.cp().bin_id({8}).VariableRebin(
     {0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120,
@@ -224,8 +214,8 @@ int main() {
     }
     cb_hm.process({"ggH", "bbH", "bkg"});
 
-    cb_hm.AddWorkspace(&ws);
-    cb_hm.cp().backgrounds().ExtractPdfs("htt", "$CHANNEL_bkgpdf");
+    cb_hm.AddWorkspace(ws);
+    cb_hm.cp().backgrounds().ExtractPdfs(cb_hm, "htt", "$CHANNEL_bkgpdf");
     // cb_hm.PrintAll();
   } else {
     cb_hm.cp().bin_id({8}).VariableRebin(

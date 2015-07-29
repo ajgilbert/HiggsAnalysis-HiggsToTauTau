@@ -14,10 +14,10 @@ def StripBBB(syst):
 cmb = ch.CombineHarvester()
 
 
-for card in glob.glob('output/htt-YR3/125.1/htt*.txt'):
+for card in glob.glob('output/htt/125.1/htt*.txt'):
   cmb.QuickParseDatacard(card, "$MASS/$ANALYSIS_$CHANNEL_$BINID_$ERA.txt")
 
-for card in glob.glob('output/htt-YR3/125.1/vhtt*.txt'):
+for card in glob.glob('output/htt/125.1/vhtt*.txt'):
   cmb.QuickParseDatacard(card, "$MASS/$ANALYSIS_$BINID_$ERA.txt")
 
 before = len(cmb.syst_name_set())
